@@ -409,7 +409,7 @@ static void read_callback(const MIDIPacketList *newPackets, PmInternal *midi)
      * Receiver beware.
      */
     CM_DEBUG printf("read_callback packet @ %lld status %x length %d\n",
-                    AudioConvertHostTimeToNanos(AudioGetCurrentHostTime()),
+                    AudioGetCurrentHostTime(),
                     packet->data[0], packet->length);
     for (packetIndex = 0; packetIndex < newPackets->numPackets; packetIndex++) {
         /* Set the timestamp and dispatch this message */
@@ -731,7 +731,7 @@ static PmError midi_write_flush(PmInternal *midi, PmTimestamp timestamp)
     if (info->packet != NULL) {
         /* out of space, send the buffer and start refilling it */
         /* update min_next_time each flush to support rate limit */
-        UInt64 now =  AudioConvertHostTimeToNanos(AudioGetCurrentHostTime());
+        UInt64 now = AudioGetCurrentHostTime();
         if (now > info->min_next_time) 
             info->min_next_time = now;
         if (info->is_virtual) {
@@ -756,7 +756,7 @@ static PmError send_packet(PmInternal *midi, Byte *message,
     
     CM_DEBUG printf("add %d to packet %p len %d timestamp %lld @ %lld\n",
                     message[0], info->packet, messageLength, timestamp,
-                    AudioConvertHostTimeToNanos(AudioGetCurrentHostTime()));
+                    AudioGetCurrentHostTime());
     info->packet = MIDIPacketListAdd(info->packetList,
                                      sizeof(info->packetBuffer), info->packet,
                                      timestamp, messageLength, message);
@@ -789,7 +789,6 @@ static PmError midi_write_short(PmInternal *midi, PmEvent *event)
     PmTimestamp when = event->timestamp;
     PmMessage what = event->message;
     MIDITimeStamp timestamp;
-    UInt64 now_ns;
     coremidi_info_type info = (coremidi_info_type) midi->api_info;
     Byte message[4];
     unsigned int messageLength;
@@ -818,7 +817,7 @@ static PmError midi_write_short(PmInternal *midi, PmEvent *event)
      * latency is zero. Both mean no timing and send immediately.
      */
     if (when == 0 || midi->latency == 0) {
-        timestamp = AudioConvertNanosToHostTime(AudioGetCurrentHostTime());
+        timestamp = AudioGetCurrentHostTime();
     } else {  /* translate PortMidi time + latency to CoreMIDI time */
         timestamp = ((UInt64) (when + midi->latency) * (UInt64) 1000000) +
                     info->delta;
@@ -867,7 +866,7 @@ static PmError midi_begin_sysex(PmInternal *midi, PmTimestamp when)
               (MIDITimeStamp) AudioConvertNanosToHostTime(when_ns);
     UInt64 now; /* only make system time call when writing a virtual port */
     if (info->is_virtual && info->sysex_timestamp <
-        (now =  AudioConvertHostTimeToNanos(AudioGetCurrentHostTime()))) {
+        (now = AudioGetCurrentHostTime())) {
         info->sysex_timestamp = now;
     }
 
